@@ -1,10 +1,8 @@
-import type { NextRequest } from 'next/server';
-
 export const config = {
   runtime: 'edge',
 };
 
-export default async function handler(req: NextRequest) {
+export default async function handler(req: Request) {
   const url = new URL(req.url);
 
   if (url.pathname === '/') {
@@ -21,15 +19,14 @@ export default async function handler(req: NextRequest) {
 
   if (
     !targetUrlString ||
-    (!targetUrlString.startsWith('http://') && !targetUrlString.startsWith('https://'))
+    (!targetUrlString.startsWith('http://') &&
+      !targetUrlString.startsWith('https://'))
   ) {
-    return new Response('Invalid or missing target URL in path. Usage: /<target_url>', {
+    return new Response('用法：/目标URL', {
       status: 400,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
   }
-
-  console.log(`Proxying request to: ${targetUrlString}`);
 
   try {
     const res = await fetch(targetUrlString, {
@@ -44,7 +41,7 @@ export default async function handler(req: NextRequest) {
     // CORS
     responseHeaders.set('Access-Control-Allow-Origin', '*');
     responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, *');
+    responseHeaders.set('Access-Control-Allow-Headers', '*');
 
     if (req.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: responseHeaders });
@@ -52,12 +49,10 @@ export default async function handler(req: NextRequest) {
 
     return new Response(res.body, {
       status: res.status,
-      statusText: res.statusText,
       headers: responseHeaders,
     });
-  } catch (err: any) {
-    console.error(`Error fetching ${targetUrlString}:`, err);
-    return new Response(`Failed to proxy request: ${err.message}`, {
+  } catch (err) {
+    return new Response('代理请求失败', {
       status: 502,
       headers: { 'Content-Type': 'text/plain; charset=utf-8' },
     });
